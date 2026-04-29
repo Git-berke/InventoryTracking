@@ -17,7 +17,9 @@ public sealed class AuthController(IAuthService authService) : ApiControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await authService.LoginAsync(request, cancellationToken);
-        return result is null ? Unauthorized(new { message = "Invalid email or password." }) : Ok(result);
+        return result is null
+            ? UnauthorizedResponse("Invalid email or password.")
+            : OkResponse(result, "Login successful.");
     }
 
     [HttpGet("me")]
@@ -26,10 +28,10 @@ public sealed class AuthController(IAuthService authService) : ApiControllerBase
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdValue, out var userId))
         {
-            return Unauthorized();
+            return UnauthorizedResponse();
         }
 
         var result = await authService.GetCurrentUserAsync(userId, cancellationToken);
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Authenticated user could not be found.") : OkResponse(result);
     }
 }

@@ -28,7 +28,7 @@ public sealed class TasksController(
             new GetTasksQuery(page, pageSize),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.TasksRead)]
@@ -36,7 +36,7 @@ public sealed class TasksController(
     public async Task<IActionResult> GetTask(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await taskManagementService.GetByIdAsync(id, cancellationToken);
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Task could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.TasksRead)]
@@ -47,7 +47,7 @@ public sealed class TasksController(
             new GetTaskVehiclesQuery(id),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.TasksRead)]
@@ -58,7 +58,7 @@ public sealed class TasksController(
             new GetTaskInventoryQuery(id),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.TasksCreate)]
@@ -67,19 +67,8 @@ public sealed class TasksController(
         [FromBody] CreateTaskRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await taskManagementService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetTask), new { id = result.Id }, result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await taskManagementService.CreateAsync(request, cancellationToken);
+        return CreatedResponse(nameof(GetTask), new { id = result.Id }, result, "Task created successfully.");
     }
 
     [Authorize(Policy = PermissionNames.TasksUpdate)]
@@ -89,33 +78,17 @@ public sealed class TasksController(
         [FromBody] UpdateTaskRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await taskManagementService.UpdateAsync(id, request, cancellationToken);
-            return result is null ? NotFound() : Ok(result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await taskManagementService.UpdateAsync(id, request, cancellationToken);
+        return result is null ? NotFoundResponse("Task could not be found.") : OkResponse(result, "Task updated successfully.");
     }
 
     [Authorize(Policy = PermissionNames.TasksDelete)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTask(Guid id, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var deleted = await taskManagementService.DeleteAsync(id, cancellationToken);
-            return deleted ? NoContent() : NotFound();
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var deleted = await taskManagementService.DeleteAsync(id, cancellationToken);
+        return deleted
+            ? OkResponse(new { deleted = true }, "Task deleted successfully.")
+            : NotFoundResponse("Task could not be found.");
     }
 }

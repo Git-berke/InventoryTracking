@@ -17,31 +17,16 @@ public sealed class StockTransfersController(
         [FromBody] TransferWarehouseToVehicleRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            await stockTransferService.TransferWarehouseToVehicleAsync(
-                request.ProductId,
-                request.SourceWarehouseId,
-                request.DestinationVehicleId,
-                request.Quantity,
-                request.TaskId,
-                request.ReferenceNote,
-                cancellationToken);
+        await stockTransferService.TransferWarehouseToVehicleAsync(
+            request.ProductId,
+            request.SourceWarehouseId,
+            request.DestinationVehicleId,
+            request.Quantity,
+            request.TaskId,
+            request.ReferenceNote,
+            cancellationToken);
 
-            return NoContent();
-        }
-        catch (ArgumentOutOfRangeException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        return OkResponse(new { completed = true }, "Stock transferred from warehouse to vehicle successfully.");
     }
 
     [Authorize(Policy = PermissionNames.StockTransfersCreate)]
@@ -50,29 +35,14 @@ public sealed class StockTransfersController(
         [FromBody] ReturnVehicleToWarehouseRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            await stockTransferService.ReturnVehicleToWarehouseAsync(
-                request.ProductId,
-                request.SourceVehicleId,
-                request.DestinationWarehouseId,
-                request.Quantity,
-                request.ReferenceNote,
-                cancellationToken);
+        await stockTransferService.ReturnVehicleToWarehouseAsync(
+            request.ProductId,
+            request.SourceVehicleId,
+            request.DestinationWarehouseId,
+            request.Quantity,
+            request.ReferenceNote,
+            cancellationToken);
 
-            return NoContent();
-        }
-        catch (ArgumentOutOfRangeException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        return OkResponse(new { completed = true }, "Stock returned from vehicle to warehouse successfully.");
     }
 }

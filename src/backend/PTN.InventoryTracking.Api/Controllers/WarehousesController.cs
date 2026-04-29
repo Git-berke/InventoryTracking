@@ -16,7 +16,7 @@ public sealed class WarehousesController(
     public async Task<IActionResult> GetWarehouse(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await warehouseManagementService.GetByIdAsync(id, cancellationToken);
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Warehouse could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.WarehousesCreate)]
@@ -25,19 +25,8 @@ public sealed class WarehousesController(
         [FromBody] CreateWarehouseRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await warehouseManagementService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetWarehouse), new { id = result.Id }, result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await warehouseManagementService.CreateAsync(request, cancellationToken);
+        return CreatedResponse(nameof(GetWarehouse), new { id = result.Id }, result, "Warehouse created successfully.");
     }
 
     [Authorize(Policy = PermissionNames.WarehousesUpdate)]
@@ -47,19 +36,8 @@ public sealed class WarehousesController(
         [FromBody] UpdateWarehouseRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await warehouseManagementService.UpdateAsync(id, request, cancellationToken);
-            return result is null ? NotFound() : Ok(result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await warehouseManagementService.UpdateAsync(id, request, cancellationToken);
+        return result is null ? NotFoundResponse("Warehouse could not be found.") : OkResponse(result, "Warehouse updated successfully.");
     }
 
     [Authorize(Policy = PermissionNames.WarehousesDelete)]
@@ -67,6 +45,8 @@ public sealed class WarehousesController(
     public async Task<IActionResult> DeleteWarehouse(Guid id, CancellationToken cancellationToken = default)
     {
         var deleted = await warehouseManagementService.DeleteAsync(id, cancellationToken);
-        return deleted ? NoContent() : NotFound();
+        return deleted
+            ? OkResponse(new { deleted = true }, "Warehouse deleted successfully.")
+            : NotFoundResponse("Warehouse could not be found.");
     }
 }

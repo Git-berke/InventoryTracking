@@ -7,7 +7,7 @@ namespace PTN.InventoryTracking.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/inventory-transactions")]
-public sealed class InventoryTransactionsController(GetInventoryTransactionsHandler getInventoryTransactionsHandler) : ControllerBase
+public sealed class InventoryTransactionsController(GetInventoryTransactionsHandler getInventoryTransactionsHandler) : ApiControllerBase
 {
     [Authorize(Policy = PermissionNames.InventoryTransactionsRead)]
     [HttpGet]
@@ -22,6 +22,6 @@ public sealed class InventoryTransactionsController(GetInventoryTransactionsHand
             new GetInventoryTransactionsQuery(page, pageSize, productId, taskId),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 }

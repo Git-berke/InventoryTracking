@@ -26,7 +26,7 @@ public sealed class VehiclesController(
             new GetVehiclesQuery(page, pageSize),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.VehiclesRead)]
@@ -34,7 +34,7 @@ public sealed class VehiclesController(
     public async Task<IActionResult> GetVehicle(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await vehicleManagementService.GetByIdAsync(id, cancellationToken);
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Vehicle could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.VehiclesRead)]
@@ -45,7 +45,7 @@ public sealed class VehiclesController(
             new GetVehicleInventoriesQuery(id),
             cancellationToken);
 
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Vehicle inventory could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.VehiclesCreate)]
@@ -54,19 +54,8 @@ public sealed class VehiclesController(
         [FromBody] CreateVehicleRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await vehicleManagementService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetVehicle), new { id = result.Id }, result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await vehicleManagementService.CreateAsync(request, cancellationToken);
+        return CreatedResponse(nameof(GetVehicle), new { id = result.Id }, result, "Vehicle created successfully.");
     }
 
     [Authorize(Policy = PermissionNames.VehiclesUpdate)]
@@ -76,19 +65,8 @@ public sealed class VehiclesController(
         [FromBody] UpdateVehicleRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await vehicleManagementService.UpdateAsync(id, request, cancellationToken);
-            return result is null ? NotFound() : Ok(result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await vehicleManagementService.UpdateAsync(id, request, cancellationToken);
+        return result is null ? NotFoundResponse("Vehicle could not be found.") : OkResponse(result, "Vehicle updated successfully.");
     }
 
     [Authorize(Policy = PermissionNames.VehiclesDelete)]
@@ -96,6 +74,8 @@ public sealed class VehiclesController(
     public async Task<IActionResult> DeleteVehicle(Guid id, CancellationToken cancellationToken = default)
     {
         var deleted = await vehicleManagementService.DeleteAsync(id, cancellationToken);
-        return deleted ? NoContent() : NotFound();
+        return deleted
+            ? OkResponse(new { deleted = true }, "Vehicle deleted successfully.")
+            : NotFoundResponse("Vehicle could not be found.");
     }
 }

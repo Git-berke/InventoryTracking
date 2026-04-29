@@ -26,7 +26,7 @@ public sealed class ProductsController(
             new GetProductsQuery(page, pageSize),
             cancellationToken);
 
-        return Ok(result);
+        return OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.ProductsRead)]
@@ -34,7 +34,7 @@ public sealed class ProductsController(
     public async Task<IActionResult> GetProduct(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await productManagementService.GetByIdAsync(id, cancellationToken);
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Product could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.ProductsRead)]
@@ -45,7 +45,7 @@ public sealed class ProductsController(
             new GetProductStockSummaryQuery(id),
             cancellationToken);
 
-        return result is null ? NotFound() : Ok(result);
+        return result is null ? NotFoundResponse("Product stock summary could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.ProductsCreate)]
@@ -54,19 +54,8 @@ public sealed class ProductsController(
         [FromBody] CreateProductRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await productManagementService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await productManagementService.CreateAsync(request, cancellationToken);
+        return CreatedResponse(nameof(GetProduct), new { id = result.Id }, result, "Product created successfully.");
     }
 
     [Authorize(Policy = PermissionNames.ProductsUpdate)]
@@ -76,19 +65,8 @@ public sealed class ProductsController(
         [FromBody] UpdateProductRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await productManagementService.UpdateAsync(id, request, cancellationToken);
-            return result is null ? NotFound() : Ok(result);
-        }
-        catch (ArgumentException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return ValidationProblemResponse(exception);
-        }
+        var result = await productManagementService.UpdateAsync(id, request, cancellationToken);
+        return result is null ? NotFoundResponse("Product could not be found.") : OkResponse(result, "Product updated successfully.");
     }
 
     [Authorize(Policy = PermissionNames.ProductsDelete)]
@@ -96,6 +74,8 @@ public sealed class ProductsController(
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken = default)
     {
         var deleted = await productManagementService.DeleteAsync(id, cancellationToken);
-        return deleted ? NoContent() : NotFound();
+        return deleted
+            ? OkResponse(new { deleted = true }, "Product deleted successfully.")
+            : NotFoundResponse("Product could not be found.");
     }
 }
