@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using PTN.InventoryTracking.Application.Abstractions.Persistence;
 using PTN.InventoryTracking.Domain.Entities;
 using PTN.InventoryTracking.Persistence.Seed;
 
 namespace PTN.InventoryTracking.Persistence.Contexts;
 
-public sealed class InventoryTrackingDbContext(DbContextOptions<InventoryTrackingDbContext> options) : DbContext(options)
+public sealed class InventoryTrackingDbContext(DbContextOptions<InventoryTrackingDbContext> options) : DbContext(options), IInventoryTrackingDbContext
 {
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
