@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PTN.InventoryTracking.Domain.Entities;
+using PTN.InventoryTracking.Persistence.Seed;
 
 namespace PTN.InventoryTracking.Persistence.Contexts;
 
@@ -17,6 +18,7 @@ public sealed class InventoryTrackingDbContext(DbContextOptions<InventoryTrackin
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(InventoryTrackingDbContext).Assembly);
+        SeedData.Apply(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 }
