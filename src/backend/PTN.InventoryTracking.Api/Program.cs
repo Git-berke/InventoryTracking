@@ -3,6 +3,7 @@ using PTN.InventoryTracking.Api.Contracts;
 using PTN.InventoryTracking.Api.Middleware;
 using PTN.InventoryTracking.Application.Extensions;
 using PTN.InventoryTracking.Infrastructure.Extensions;
+using PTN.InventoryTracking.Infrastructure.Realtime;
 using PTN.InventoryTracking.Persistence.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,5 +52,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<InventoryEventsHub>(InventoryEventsHub.Route);
 
 app.Run();

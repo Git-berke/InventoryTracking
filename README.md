@@ -17,6 +17,7 @@ Bu surumda odak tamamen backend tarafindadir. Redis, Elasticsearch, SignalR ve f
 - [Kimlik Dogrulama ve Yetkilendirme](#kimlik-dogrulama-ve-yetkilendirme)
 - [API Uc Noktalari](#api-uc-noktalari)
 - [Stok Transfer Akisi](#stok-transfer-akisi)
+- [Gercek Zamanli Bildirim](#gercek-zamanli-bildirim)
 - [CI/CD](#cicd)
 - [Teknik Tercihler](#teknik-tercihler)
 - [Mevcut Durum ve Sonraki Adimlar](#mevcut-durum-ve-sonraki-adimlar)
@@ -116,6 +117,7 @@ Su anki backend kapsaminda tamamlanan basliklar:
 - global exception middleware
 - standart API response zarfi
 - request validation
+- SignalR tabanli gercek zamanli bildirim omurgasi
 
 ## Kullanilan Teknolojiler
 
@@ -287,6 +289,10 @@ Yaklasim su sekildedir:
 - `POST /api/v1/stock-transfers/warehouse-to-vehicle`
 - `POST /api/v1/stock-transfers/vehicle-to-warehouse`
 
+### SignalR Hub
+
+- `/hubs/inventory-events`
+
 ## Stok Transfer Akisi
 
 ### Depodan Araca Transfer
@@ -317,6 +323,27 @@ Kurallar:
 - hedef depo lokasyonu bulunmali
 
 Bu islem de tek DB transaction icinde tamamlanir.
+
+## Gercek Zamanli Bildirim
+
+PDF'teki arti deger maddesi icin SignalR tabanli temel bir bildirim omurgasi eklendi.
+
+Hub:
+
+```text
+/hubs/inventory-events
+```
+
+JWT ile korunur. Baglanan client'lar `inventory-event` method adi uzerinden event alir.
+
+Yayinlanan temel eventler:
+
+- `stock.transfer.completed`
+- `stock.return.completed`
+- `task.created`
+- `task.updated`
+
+Bu sayede kritik aksiyonlardan sonra istemci tarafina anlik bildirim akisi saglanabilir.
 
 ## CI/CD
 
@@ -355,7 +382,6 @@ Backend tarafinda guclu bir temel hazir durumda. Ancak PDF'in tum beklentileri a
 - frontend uygulamasi
 - GitHub Actions disinda daha ileri deployment CI/CD
 - merkezi log sink entegrasyonu
-- SignalR tabanli gercek zamanli bildirim
 - Redis cache
 - Elasticsearch
 - daha kapsamli unit/integration testler
@@ -372,5 +398,6 @@ Projeyi adim adim ilerletirken birkac yardimci teknik not da `docs/backend` alti
 - `crud-layers.md`
 - `stock-transfer-service.md`
 - `authentication.md`
+- `realtime-notifications.md`
 
 Bu dosyalar gelistirme surecinde alinan kararlarin kisa teknik ozetlerini icerir.

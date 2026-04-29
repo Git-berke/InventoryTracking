@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using PTN.InventoryTracking.Application.Abstractions.Services;
+using PTN.InventoryTracking.Application.DTOs.Realtime;
 using PTN.InventoryTracking.Domain.Entities;
 using PTN.InventoryTracking.Domain.Enums;
 using PTN.InventoryTracking.Persistence.Contexts;
 
 namespace PTN.InventoryTracking.Persistence.Services;
 
-public sealed class StockTransferService(InventoryTrackingDbContext dbContext) : IStockTransferService
+public sealed class StockTransferService(
+    InventoryTrackingDbContext dbContext,
+    IRealtimeNotificationService realtimeNotificationService) : IStockTransferService
 {
     public async Task TransferWarehouseToVehicleAsync(
         Guid productId,
@@ -105,6 +108,22 @@ public sealed class StockTransferService(InventoryTrackingDbContext dbContext) :
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await realtimeNotificationService.PublishInventoryEventAsync(
+            new InventoryRealtimeEventDto(
+                "stock.transfer.completed",
+                "Stock transferred from warehouse to vehicle.",
+                DateTime.UtcNow,
+                new Dictionary<string, string?>
+                {
+                    ["productId"] = productId.ToString(),
+                    ["sourceWarehouseId"] = sourceWarehouseId.ToString(),
+                    ["destinationVehicleId"] = destinationVehicleId.ToString(),
+                    ["taskId"] = taskId.ToString(),
+                    ["quantity"] = quantity.ToString(),
+                    ["transactionType"] = InventoryTransactionType.WarehouseToVehicle.ToString()
+                }),
+            cancellationToken);
     }
 
     public async Task ReturnVehicleToWarehouseAsync(
@@ -176,6 +195,22 @@ public sealed class StockTransferService(InventoryTrackingDbContext dbContext) :
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await realtimeNotificationService.PublishInventoryEventAsync(
+            new InventoryRealtimeEventDto(
+                "stock.return.completed",
+                "Stock returned from vehicle to warehouse.",
+                DateTime.UtcNow,
+                new Dictionary<string, string?>
+                {
+                    ["productId"] = productId.ToString(),
+                    ["sourceVehicleId"] = sourceVehicleId.ToString(),
+                    ["destinationWarehouseId"] = destinationWarehouseId.ToString(),
+                    ["taskId"] = activeTaskId?.ToString(),
+                    ["quantity"] = quantity.ToString(),
+                    ["transactionType"] = InventoryTransactionType.VehicleToWarehouse.ToString()
+                }),
+            cancellationToken);
     }
 
     private async Task<StockBalance> GetOrCreateStockBalanceAsync(

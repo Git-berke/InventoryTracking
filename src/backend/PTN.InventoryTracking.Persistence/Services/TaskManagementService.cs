@@ -1,6 +1,7 @@
 using PTN.InventoryTracking.Application.Abstractions.Persistence;
 using PTN.InventoryTracking.Application.Abstractions.Persistence.Repositories;
 using PTN.InventoryTracking.Application.Abstractions.Services;
+using PTN.InventoryTracking.Application.DTOs.Realtime;
 using PTN.InventoryTracking.Application.DTOs.Tasks;
 using PTN.InventoryTracking.Domain.Entities;
 
@@ -8,7 +9,8 @@ namespace PTN.InventoryTracking.Persistence.Services;
 
 public sealed class TaskManagementService(
     ITaskRepository taskRepository,
-    IInventoryTrackingDbContext dbContext) : ITaskManagementService
+    IInventoryTrackingDbContext dbContext,
+    IRealtimeNotificationService realtimeNotificationService) : ITaskManagementService
 {
     public async Task<TaskDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -33,6 +35,13 @@ public sealed class TaskManagementService(
         await taskRepository.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await realtimeNotificationService.PublishInventoryEventAsync(
+            BuildTaskNotification(
+                "task.created",
+                "Task created successfully.",
+                entity),
+            cancellationToken);
+
         return Map(entity);
     }
 
@@ -55,6 +64,14 @@ public sealed class TaskManagementService(
         entity.UpdatedAtUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await realtimeNotificationService.PublishInventoryEventAsync(
+            BuildTaskNotification(
+                "task.updated",
+                "Task updated successfully.",
+                entity),
+            cancellationToken);
+
         return Map(entity);
     }
 
@@ -78,6 +95,24 @@ public sealed class TaskManagementService(
 
     private static TaskDetailDto Map(InventoryTask entity) =>
         new(entity.Id, entity.Name, entity.Description, entity.Region, entity.StartDate, entity.EndDate, entity.Status);
+
+    private static InventoryRealtimeEventDto BuildTaskNotification(
+        string eventType,
+        string message,
+        InventoryTask task) =>
+        new(
+            eventType,
+            message,
+            DateTime.UtcNow,
+            new Dictionary<string, string?>
+            {
+                ["taskId"] = task.Id.ToString(),
+                ["taskName"] = task.Name,
+                ["region"] = task.Region,
+                ["status"] = task.Status.ToString(),
+                ["startDate"] = task.StartDate.ToString("yyyy-MM-dd"),
+                ["endDate"] = task.EndDate?.ToString("yyyy-MM-dd")
+            });
 
     private static void ValidateDates(DateOnly startDate, DateOnly? endDate)
     {

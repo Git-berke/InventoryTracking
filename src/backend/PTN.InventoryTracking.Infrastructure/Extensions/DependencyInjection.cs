@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.Security;
 using PTN.InventoryTracking.Infrastructure.Auth;
+using PTN.InventoryTracking.Infrastructure.Realtime;
 
 namespace PTN.InventoryTracking.Infrastructure.Extensions;
 
@@ -24,6 +25,23 @@ public static class DependencyInjection
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrWhiteSpace(accessToken) &&
+                            path.StartsWithSegments(InventoryEventsHub.Route))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -49,6 +67,8 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IAuthService, JwtAuthService>();
+        services.AddScoped<IRealtimeNotificationService, SignalRRealtimeNotificationService>();
+        services.AddSignalR();
 
         return services;
     }
