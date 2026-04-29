@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/PTN.InventoryTracking.Api/PTN.InventoryTracking.Api.csproj" />
+    <Project Path="src/backend/PTN.InventoryTracking.Application/PTN.InventoryTracking.Application.csproj" />
+    <Project Path="src/backend/PTN.InventoryTracking.Domain/PTN.InventoryTracking.Domain.csproj" />
+    <Project Path="src/backend/PTN.InventoryTracking.Infrastructure/PTN.InventoryTracking.Infrastructure.csproj" />
+    <Project Path="src/backend/PTN.InventoryTracking.Persistence/PTN.InventoryTracking.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/backend/">
+    <Project Path="tests/backend/PTN.InventoryTracking.IntegrationTests/PTN.InventoryTracking.IntegrationTests.csproj" />
+    <Project Path="tests/backend/PTN.InventoryTracking.UnitTests/PTN.InventoryTracking.UnitTests.csproj" />
+  </Folder>
+</Solution>

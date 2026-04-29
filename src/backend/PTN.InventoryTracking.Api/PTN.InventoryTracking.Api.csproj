@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PTN.InventoryTracking.Application\PTN.InventoryTracking.Application.csproj" />
+    <ProjectReference Include="..\PTN.InventoryTracking.Infrastructure\PTN.InventoryTracking.Infrastructure.csproj" />
+    <ProjectReference Include="..\PTN.InventoryTracking.Persistence\PTN.InventoryTracking.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>
