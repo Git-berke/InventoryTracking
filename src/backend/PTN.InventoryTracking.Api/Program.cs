@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using PTN.InventoryTracking.Api.Contracts;
 using PTN.InventoryTracking.Api.Middleware;
 using PTN.InventoryTracking.Application.Extensions;
@@ -37,7 +38,30 @@ builder.Services.AddPersistence(builder.Configuration);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "PTN Inventory Tracking API",
+        Version = "v1",
+        Description = "Inventory tracking API. Use POST /api/v1/auth/login to obtain a JWT, then click 'Authorize' and paste the token (without the 'Bearer ' prefix)."
+    });
+
+    options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "JWT Bearer token. Paste only the token value, the 'Bearer ' prefix is added automatically.",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("bearer", document)] = []
+    });
+});
 
 var app = builder.Build();
 

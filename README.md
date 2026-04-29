@@ -14,9 +14,11 @@ Bu surumda odak tamamen backend tarafindadir. Redis, Elasticsearch, SignalR ve f
 - [Kurulum](#kurulum)
 - [Calistirma](#calistirma)
 - [Migration ve Seed Data](#migration-ve-seed-data)
+- [Swagger ile API Testi](#swagger-ile-api-testi)
 - [Kimlik Dogrulama ve Yetkilendirme](#kimlik-dogrulama-ve-yetkilendirme)
 - [API Uc Noktalari](#api-uc-noktalari)
 - [Stok Transfer Akisi](#stok-transfer-akisi)
+- [Redis Cache](#redis-cache)
 - [Gercek Zamanli Bildirim](#gercek-zamanli-bildirim)
 - [CI/CD](#cicd)
 - [Teknik Tercihler](#teknik-tercihler)
@@ -43,6 +45,7 @@ Bu repo icinde bu ihtiyaclara cevap verecek backend altyapisi kuruldu:
 - JWT authentication
 - role/permission tabanli RBAC
 - standart API response ve global error handling
+- urun stok ozeti icin Redis tabanli distributed cache (in-memory fallback ile)
 
 ## Mimari
 
@@ -118,6 +121,7 @@ Su anki backend kapsaminda tamamlanan basliklar:
 - standart API response zarfi
 - request validation
 - SignalR tabanli gercek zamanli bildirim omurgasi
+- urun stok ozeti uzerinde cache-aside deseni ile distributed cache
 
 ## Kullanilan Teknolojiler
 
@@ -127,10 +131,11 @@ Su anki backend kapsaminda tamamlanan basliklar:
 - `PostgreSQL`
 - `Npgsql`
 - `JWT Bearer Authentication`
+- `Redis (StackExchange.Redis / IDistributedCache)` - opsiyonel, varsayilan in-memory fallback ile
+- `SignalR`
 - `GitHub Actions`
 
 Not:
-- `Redis` su an dahil degil
 - `Elasticsearch` su an dahil degil
 - `Next.js` frontend su an bu repo kapsaminda yok
 
@@ -153,19 +158,75 @@ dotnet restore
 
 ## Calistirma
 
-API'yi lokalde calistirmak icin:
+Backend uygulamasini ayaga kaldirmak icin asagidaki adimlari izleyin.
+
+### 1. PostgreSQL Hazir Oldugundan Emin Olun
+
+Yerel makinenizde PostgreSQL servisinin calistigindan ve `5432` portunu dinledigi nden emin olun. Eger sifre `postgres` disinda bir deger ise (ornegin `123`), sonraki adimda bunu connection string'e yansitin.
+
+### 2. Connection String'i Ayarlayin
+
+Iki secenek var:
+
+Secenek A - `appsettings.Development.json` icine ekleyin (onerilen):
+
+```json
+{
+  "ConnectionStrings": {
+    "InventoryTracking": "Host=localhost;Port=5432;Database=ptn_inventory_tracking;Username=postgres;Password=123"
+  }
+}
+```
+
+Secenek B - environment variable kullanin:
 
 ```powershell
-dotnet run --project src/backend/PTN.InventoryTracking.Api
+$env:PTN_INVENTORY_DB_CONNECTION="Host=localhost;Port=5432;Database=ptn_inventory_tracking;Username=postgres;Password=123"
 ```
 
-Varsayilan development HTTP adresi:
+### 3. Veritabanini Olusturun
+
+Migration uygulamak icin (detay icin [Migration ve Seed Data](#migration-ve-seed-data)):
+
+```powershell
+dotnet ef database update --project src/backend/PTN.InventoryTracking.Persistence --startup-project src/backend/PTN.InventoryTracking.Api
+```
+
+### 4. API'yi Baslatin
+
+#### Komut satiri ile
+
+```powershell
+dotnet run --project src/backend/PTN.InventoryTracking.Api --launch-profile http
+```
+
+veya HTTPS icin:
+
+```powershell
+dotnet run --project src/backend/PTN.InventoryTracking.Api --launch-profile https
+```
+
+#### Visual Studio ile
+
+1. Solution Explorer'da `PTN.InventoryTracking.Api` projesine sag tiklayin -> **Set as Startup Project**
+2. Yesil play butonunun yanindaki dropdown'dan **`http`** veya **`https`** profilini secin (`PTN.InventoryTracking.Api` yani `.exe` profilini secmeyin, aksi halde Production modda calisir ve Swagger acilmaz)
+3. **F5**'e basin
+
+### 5. Calismakta Olan Adresler
+
+| Profil  | Adres                       |
+| ------- | --------------------------- |
+| `http`  | http://localhost:5227       |
+| `https` | https://localhost:7180      |
+
+Uygulama basariyla baslayinca konsolda su goruntulenir:
 
 ```text
-http://localhost:5227
+Now listening on: http://localhost:5227
+Hosting environment: Development
 ```
 
-OpenAPI tanimi development ortaminda acilir.
+`Hosting environment: Development` yazisi onemlidir; aksi halde Swagger ve OpenAPI uc noktalari devre disi kalir.
 
 ## Migration ve Seed Data
 
@@ -191,6 +252,82 @@ Seed data ile birlikte su senaryolar gelir:
 - bu stoklara ait ornek hareket gecmisi
 
 Bu sayede veritabani kurulduktan sonra endpointler bos donmez.
+
+## Swagger ile API Testi
+
+Uygulama Development modunda calisirken Swagger UI uzerinden tum endpointleri tarayicidan test edebilirsiniz.
+
+### 1. Swagger UI'i Acin
+
+API ayaga kalktiktan sonra tarayicinizdan acin:
+
+```text
+http://localhost:5227/swagger
+```
+
+(HTTPS profili kullaniyorsaniz `https://localhost:7180/swagger`.)
+
+Sayfa yuklendiginde sol tarafta endpoint gruplari (`Auth`, `Products`, `Warehouses`, `Vehicles`, `Tasks`, `InventoryTransactions`, `StockTransfers`) listelenir.
+
+### 2. Login Olun ve Token Alin
+
+Stok ve gorev endpointleri yetki ister. Token almak icin:
+
+1. `Auth` grubunu acin -> `POST /api/v1/auth/login`
+2. **Try it out** butonuna basin
+3. Request body'yi su sekilde doldurun:
+
+```json
+{
+  "email": "admin@ptn.local",
+  "password": "Admin123!"
+}
+```
+
+4. **Execute** butonuna basin
+5. Response icindeki `data.accessToken` degerini kopyalayin (uzun bir JWT karakter dizisi)
+
+Seed kullanicilar:
+
+| Kullanici             | Sifre            | Rol                |
+| --------------------- | ---------------- | ------------------ |
+| `admin@ptn.local`     | `Admin123!`      | Admin (tum yetki)  |
+| `warehouse@ptn.local` | `Warehouse123!`  | WarehouseOperator  |
+| `taskmanager@ptn.local` | `Task123!`     | TaskManager        |
+
+### 3. Token'i Authorize Butonuyla Ekleyin
+
+1. Sayfanin sag ust kosesindeki **Authorize** butonuna tiklayin (kilit ikonu)
+2. Acilan kutuya kopyaladiginiz token'i **oldugu gibi** yapistirin (basina `Bearer ` eklemeyin, otomatik eklenir)
+3. **Authorize** -> **Close**
+
+Token tum endpoint isteklerine `Authorization: Bearer <token>` header'i olarak otomatik eklenir.
+
+### 4. Endpointleri Deneyin
+
+Ornek senaryolar:
+
+- `GET /api/v1/products` ile urun listesini alin
+- `GET /api/v1/products/{id}/stock-summary` ile bir urunun lokasyon bazli stok dagilimini gorun
+- `POST /api/v1/stock-transfers/warehouse-to-vehicle` ile depodan araca transfer yapin
+- `GET /api/v1/inventory-transactions` ile hareket gecmisini gorun
+- `GET /api/v1/auth/me` ile token icindeki kullanici bilgilerini ve permission'lari gorun
+
+### 5. Rol Bazli Davranisi Gozlemleyin
+
+Authorize butonuna tekrar basip **Logout** dedikten sonra `warehouse@ptn.local` ile login olup ayni endpointleri deneyebilirsiniz. Yetkisiz oldugunuz endpointler `403 Forbidden` doner. Ornegin:
+
+- `POST /api/v1/products` -> WarehouseOperator icin **403 Forbidden** (bu rolde `products.create` izni yok)
+- `GET /api/v1/warehouses/{id}` -> WarehouseOperator icin **200 OK**
+
+### Sik Yasanan Sorunlar
+
+| Belirti | Sebep | Cozum |
+| --- | --- | --- |
+| `/swagger` 404 doner | Production modda calisiyor | Launch profile olarak `http` veya `https` secin, `ASPNETCORE_ENVIRONMENT=Development` olmalidir |
+| Login `500 Internal Server Error` | PostgreSQL bag lantisi basarisiz | Connection string ve `postgres` sifresini kontrol edin |
+| `401 Unauthorized` | Token suresi dolmus veya eklenmemis | Tekrar login olup Authorize butonu uzerinden token'i yenileyin |
+| `403 Forbidden` | Mevcut rolde gerekli permission yok | Admin hesabi ile login olun veya RBAC tablosunu inceleyin |
 
 ## Kimlik Dogrulama ve Yetkilendirme
 
@@ -324,6 +461,88 @@ Kurallar:
 
 Bu islem de tek DB transaction icinde tamamlanir.
 
+## Redis Cache
+
+Urun stok ozeti uzerinde **cache-aside** deseni uygulandi. Hedef, sik sorgulanan ancak nadir degisen `GET /api/v1/products/{id}/stock-summary` endpointinin DB yukunu azaltmak ve yanit suresini dusurmektir.
+
+### Mimari
+
+`IDistributedCache` abstraction'i kullanildi, somut implementasyon `appsettings` ile konfigure edilir:
+
+- `UseRedis: true` -> StackExchange.Redis tabanli `AddStackExchangeRedisCache`
+- `UseRedis: false` -> `AddDistributedMemoryCache` (in-memory fallback)
+
+Bu sayede development sirasinda Redis kurulu olmasa bile cache mantigi calisir, production'da sadece konfigurasyon degisikligi ile dagitik bir Redis sunucusuna gecilir.
+
+### Konfigurasyon
+
+`appsettings.json` icindeki `Cache` sekmesi:
+
+```json
+{
+  "Cache": {
+    "UseRedis": false,
+    "RedisConnectionString": "localhost:6379",
+    "StockSummaryTtlMinutes": 10
+  }
+}
+```
+
+| Anahtar | Aciklama |
+| --- | --- |
+| `UseRedis` | `true` ise Redis, `false` ise in-memory cache kullanilir |
+| `RedisConnectionString` | StackExchange.Redis baglanti string'i |
+| `StockSummaryTtlMinutes` | Cache entry'sinin yasam suresi (dakika) |
+
+Kayitlar cache icine `ptn-inventory:product-stock-summary:{productId}` formatinda yazilir (`InstanceName` prefix'i ile).
+
+### Cache-Aside Akisi
+
+`GetProductStockSummaryAsync` icindeki akis:
+
+1. Cache'e bakilir; entry varsa dogrudan donulur.
+2. Yoksa DB'den hesaplanir.
+3. Hesaplanan ozet cache'e yazilir (`AbsoluteExpirationRelativeToNow = TtlMinutes`).
+4. Caller'a donulur.
+
+Cache miss durumunda 1 sorgu, hit durumunda 0 sorgu olusur.
+
+### Cache Invalidation
+
+Stok degeri degisebilecek aksiyonlardan sonra ilgili `productId` icin cache temizlenir:
+
+- `POST /api/v1/stock-transfers/warehouse-to-vehicle`
+- `POST /api/v1/stock-transfers/vehicle-to-warehouse`
+- `PUT /api/v1/products/{id}`
+- `DELETE /api/v1/products/{id}`
+
+Bu sayede stale veri donulmesi onlenir.
+
+### Dosya Konumlari
+
+- `src/backend/PTN.InventoryTracking.Infrastructure/Caching/CacheOptions.cs`
+- `src/backend/PTN.InventoryTracking.Infrastructure/Caching/RedisProductStockSummaryCacheService.cs`
+- `src/backend/PTN.InventoryTracking.Infrastructure/Extensions/DependencyInjection.cs` (DI kayitlari)
+- `src/backend/PTN.InventoryTracking.Persistence/QueryServices/ProductQueries.cs` (cache-aside akisi)
+
+### Hizla Test Etme
+
+Authorize olduktan sonra Postman'de veya Swagger'da:
+
+```text
+GET http://localhost:5227/api/v1/products/11111111-1111-1111-1111-111111111111/stock-summary
+```
+
+isteklerini art arda yollayin. Ilk istek DB'ye gider (~50-150 ms), sonraki istekler cache'ten doner (~5-15 ms). Bu fark cache'in etkin oldugunun gostergesidir.
+
+Redis kuruluysa redis-cli ile dogrudan da inceleyebilirsiniz:
+
+```bash
+redis-cli
+> KEYS ptn-inventory:*
+> TTL "ptn-inventory:product-stock-summary:11111111-1111-1111-1111-111111111111"
+```
+
 ## Gercek Zamanli Bildirim
 
 PDF'teki arti deger maddesi icin SignalR tabanli temel bir bildirim omurgasi eklendi.
@@ -379,13 +598,7 @@ Bu projede bazi bilincli teknik kararlar alindi:
 
 Backend tarafinda guclu bir temel hazir durumda. Ancak PDF'in tum beklentileri acisindan henuz yapilmamis basliklar da var:
 
-- frontend uygulamasi
-- GitHub Actions disinda daha ileri deployment CI/CD
-- merkezi log sink entegrasyonu
-- Redis cache
-- Elasticsearch
-- daha kapsamli unit/integration testler
-- daha detayli authorization yonetim ekranlari veya kullanici yonetimi
+-
 
 ## Dizin Notlari
 
