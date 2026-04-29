@@ -8,7 +8,8 @@ namespace PTN.InventoryTracking.Persistence.Services;
 
 public sealed class ProductManagementService(
     IProductRepository productRepository,
-    IInventoryTrackingDbContext dbContext) : IProductManagementService
+    IInventoryTrackingDbContext dbContext,
+    IProductStockSummaryCacheService productStockSummaryCacheService) : IProductManagementService
 {
     public async Task<ProductDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -64,6 +65,7 @@ public sealed class ProductManagementService(
         entity.UpdatedAtUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await productStockSummaryCacheService.RemoveAsync(id, cancellationToken);
         return Map(entity);
     }
 
@@ -79,6 +81,7 @@ public sealed class ProductManagementService(
         entity.UpdatedAtUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await productStockSummaryCacheService.RemoveAsync(id, cancellationToken);
         return true;
     }
 

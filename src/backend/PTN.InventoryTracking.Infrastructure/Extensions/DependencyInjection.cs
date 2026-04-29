@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.Security;
 using PTN.InventoryTracking.Infrastructure.Auth;
+using PTN.InventoryTracking.Infrastructure.Caching;
 using PTN.InventoryTracking.Infrastructure.Realtime;
 
 namespace PTN.InventoryTracking.Infrastructure.Extensions;
@@ -18,9 +19,24 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
 
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        var cacheOptions = configuration.GetSection(CacheOptions.SectionName).Get<CacheOptions>() ?? new CacheOptions();
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey));
+
+        if (cacheOptions.UseRedis && !string.IsNullOrWhiteSpace(cacheOptions.RedisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = cacheOptions.RedisConnectionString;
+                options.InstanceName = "ptn-inventory:";
+            });
+        }
+        else
+        {
+            services.AddDistributedMemoryCache();
+        }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -67,6 +83,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IAuthService, JwtAuthService>();
+        services.AddScoped<IProductStockSummaryCacheService, RedisProductStockSummaryCacheService>();
         services.AddScoped<IRealtimeNotificationService, SignalRRealtimeNotificationService>();
         services.AddSignalR();
 

@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.0-preview.3.25172.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
     <ProjectReference Include="..\PTN.InventoryTracking.Application\PTN.InventoryTracking.Application.csproj" />
     <ProjectReference Include="..\PTN.InventoryTracking.Domain\PTN.InventoryTracking.Domain.csproj" />

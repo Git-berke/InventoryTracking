@@ -9,7 +9,8 @@ namespace PTN.InventoryTracking.Persistence.Services;
 
 public sealed class StockTransferService(
     InventoryTrackingDbContext dbContext,
-    IRealtimeNotificationService realtimeNotificationService) : IStockTransferService
+    IRealtimeNotificationService realtimeNotificationService,
+    IProductStockSummaryCacheService productStockSummaryCacheService) : IStockTransferService
 {
     public async Task TransferWarehouseToVehicleAsync(
         Guid productId,
@@ -108,6 +109,7 @@ public sealed class StockTransferService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await productStockSummaryCacheService.RemoveAsync(productId, cancellationToken);
 
         await realtimeNotificationService.PublishInventoryEventAsync(
             new InventoryRealtimeEventDto(
@@ -195,6 +197,7 @@ public sealed class StockTransferService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await productStockSummaryCacheService.RemoveAsync(productId, cancellationToken);
 
         await realtimeNotificationService.PublishInventoryEventAsync(
             new InventoryRealtimeEventDto(

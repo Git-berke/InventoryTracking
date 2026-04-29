@@ -7,7 +7,9 @@ using PTN.InventoryTracking.Persistence.Contexts;
 
 namespace PTN.InventoryTracking.Persistence.QueryServices;
 
-public sealed class ProductQueries(InventoryTrackingDbContext dbContext) : IProductQueries
+public sealed class ProductQueries(
+    InventoryTrackingDbContext dbContext,
+    IProductStockSummaryCacheService productStockSummaryCacheService) : IProductQueries
 {
     public async Task<PagedResult<ProductListItemDto>> GetProductsAsync(
         int page,
@@ -41,6 +43,12 @@ public sealed class ProductQueries(InventoryTrackingDbContext dbContext) : IProd
         Guid productId,
         CancellationToken cancellationToken = default)
     {
+        var cached = await productStockSummaryCacheService.GetAsync(productId, cancellationToken);
+        if (cached is not null)
+        {
+            return cached;
+        }
+
         var product = await dbContext.Products
             .AsNoTracking()
             .Where(x => x.Id == productId)
@@ -80,7 +88,7 @@ public sealed class ProductQueries(InventoryTrackingDbContext dbContext) : IProd
             .Where(x => x.LocationType == "vehicle")
             .Sum(x => x.Quantity);
 
-        return new ProductStockSummaryDto(
+        var summary = new ProductStockSummaryDto(
             product.Id,
             product.Code,
             product.Name,
@@ -89,6 +97,9 @@ public sealed class ProductQueries(InventoryTrackingDbContext dbContext) : IProd
             warehouseQuantity,
             vehicleQuantity,
             distribution);
+
+        await productStockSummaryCacheService.SetAsync(summary, cancellationToken);
+        return summary;
     }
 
     private static int NormalizePage(int page) => page < 1 ? 1 : page;
