@@ -1,6 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
     <ProjectReference Include="..\PTN.InventoryTracking.Application\PTN.InventoryTracking.Application.csproj" />
     <ProjectReference Include="..\PTN.InventoryTracking.Domain\PTN.InventoryTracking.Domain.csproj" />
   </ItemGroup>

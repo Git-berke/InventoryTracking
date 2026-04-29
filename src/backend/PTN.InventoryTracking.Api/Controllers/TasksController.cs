@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.Tasks;
 using PTN.InventoryTracking.Application.Features.Tasks.GetTaskInventory;
 using PTN.InventoryTracking.Application.Features.Tasks.GetTasks;
 using PTN.InventoryTracking.Application.Features.Tasks.GetTaskVehicles;
+using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
 
@@ -15,6 +17,7 @@ public sealed class TasksController(
     GetTaskInventoryHandler getTaskInventoryHandler,
     ITaskManagementService taskManagementService) : ApiControllerBase
 {
+    [Authorize(Policy = PermissionNames.TasksRead)]
     [HttpGet]
     public async Task<IActionResult> GetTasks(
         [FromQuery] int page = 1,
@@ -28,6 +31,7 @@ public sealed class TasksController(
         return Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.TasksRead)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetTask(Guid id, CancellationToken cancellationToken = default)
     {
@@ -35,6 +39,7 @@ public sealed class TasksController(
         return result is null ? NotFound() : Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.TasksRead)]
     [HttpGet("{id:guid}/vehicles")]
     public async Task<IActionResult> GetTaskVehicles(Guid id, CancellationToken cancellationToken = default)
     {
@@ -45,6 +50,7 @@ public sealed class TasksController(
         return Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.TasksRead)]
     [HttpGet("{id:guid}/inventory")]
     public async Task<IActionResult> GetTaskInventory(Guid id, CancellationToken cancellationToken = default)
     {
@@ -55,6 +61,7 @@ public sealed class TasksController(
         return Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.TasksCreate)]
     [HttpPost]
     public async Task<IActionResult> CreateTask(
         [FromBody] CreateTaskRequestDto request,
@@ -75,6 +82,7 @@ public sealed class TasksController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.TasksUpdate)]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateTask(
         Guid id,
@@ -96,6 +104,7 @@ public sealed class TasksController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.TasksDelete)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTask(Guid id, CancellationToken cancellationToken = default)
     {

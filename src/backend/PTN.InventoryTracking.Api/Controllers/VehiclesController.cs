@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.Vehicles;
 using PTN.InventoryTracking.Application.Features.Vehicles.GetVehicleInventories;
 using PTN.InventoryTracking.Application.Features.Vehicles.GetVehicles;
+using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
 
@@ -13,6 +15,7 @@ public sealed class VehiclesController(
     GetVehicleInventoriesHandler getVehicleInventoriesHandler,
     IVehicleManagementService vehicleManagementService) : ApiControllerBase
 {
+    [Authorize(Policy = PermissionNames.VehiclesRead)]
     [HttpGet]
     public async Task<IActionResult> GetVehicles(
         [FromQuery] int page = 1,
@@ -26,6 +29,7 @@ public sealed class VehiclesController(
         return Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.VehiclesRead)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetVehicle(Guid id, CancellationToken cancellationToken = default)
     {
@@ -33,6 +37,7 @@ public sealed class VehiclesController(
         return result is null ? NotFound() : Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.VehiclesRead)]
     [HttpGet("{id:guid}/inventories")]
     public async Task<IActionResult> GetVehicleInventories(Guid id, CancellationToken cancellationToken = default)
     {
@@ -43,6 +48,7 @@ public sealed class VehiclesController(
         return result is null ? NotFound() : Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.VehiclesCreate)]
     [HttpPost]
     public async Task<IActionResult> CreateVehicle(
         [FromBody] CreateVehicleRequestDto request,
@@ -63,6 +69,7 @@ public sealed class VehiclesController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.VehiclesUpdate)]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateVehicle(
         Guid id,
@@ -84,6 +91,7 @@ public sealed class VehiclesController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.VehiclesDelete)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteVehicle(Guid id, CancellationToken cancellationToken = default)
     {

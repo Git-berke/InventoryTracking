@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using PTN.InventoryTracking.Application.Security;
 using PTN.InventoryTracking.Domain.Entities;
 using PTN.InventoryTracking.Domain.Enums;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace PTN.InventoryTracking.Persistence.Seed;
 
@@ -10,6 +13,115 @@ public static class SeedData
 
     public static void Apply(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AppPermission>().HasData(
+            CreatePermission(PermissionNames.ProductsRead, "Products Read", "Read product and stock summary endpoints"),
+            CreatePermission(PermissionNames.ProductsCreate, "Products Create", "Create product records"),
+            CreatePermission(PermissionNames.ProductsUpdate, "Products Update", "Update product records"),
+            CreatePermission(PermissionNames.ProductsDelete, "Products Delete", "Delete product records"),
+            CreatePermission(PermissionNames.WarehousesRead, "Warehouses Read", "Read warehouse records"),
+            CreatePermission(PermissionNames.WarehousesCreate, "Warehouses Create", "Create warehouse records"),
+            CreatePermission(PermissionNames.WarehousesUpdate, "Warehouses Update", "Update warehouse records"),
+            CreatePermission(PermissionNames.WarehousesDelete, "Warehouses Delete", "Delete warehouse records"),
+            CreatePermission(PermissionNames.VehiclesRead, "Vehicles Read", "Read vehicle and vehicle inventory endpoints"),
+            CreatePermission(PermissionNames.VehiclesCreate, "Vehicles Create", "Create vehicle records"),
+            CreatePermission(PermissionNames.VehiclesUpdate, "Vehicles Update", "Update vehicle records"),
+            CreatePermission(PermissionNames.VehiclesDelete, "Vehicles Delete", "Delete vehicle records"),
+            CreatePermission(PermissionNames.TasksRead, "Tasks Read", "Read task, task vehicle and task inventory endpoints"),
+            CreatePermission(PermissionNames.TasksCreate, "Tasks Create", "Create task records"),
+            CreatePermission(PermissionNames.TasksUpdate, "Tasks Update", "Update task records"),
+            CreatePermission(PermissionNames.TasksDelete, "Tasks Delete", "Delete task records"),
+            CreatePermission(PermissionNames.InventoryTransactionsRead, "Inventory Transactions Read", "Read inventory transaction history"),
+            CreatePermission(PermissionNames.StockTransfersCreate, "Stock Transfers Create", "Perform stock transfer operations"));
+
+        modelBuilder.Entity<AppRole>().HasData(
+            new AppRole
+            {
+                Id = SeedIds.RoleAdmin,
+                Code = "ROLE-ADMIN",
+                Name = RoleNames.Admin,
+                Description = "Full access role",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            },
+            new AppRole
+            {
+                Id = SeedIds.RoleWarehouseOperator,
+                Code = "ROLE-WAREHOUSE-OPERATOR",
+                Name = RoleNames.WarehouseOperator,
+                Description = "Warehouse and stock transfer operator role",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            },
+            new AppRole
+            {
+                Id = SeedIds.RoleTaskManager,
+                Code = "ROLE-TASK-MANAGER",
+                Name = RoleNames.TaskManager,
+                Description = "Task and vehicle management role",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            });
+
+        modelBuilder.Entity<AppUser>().HasData(
+            new AppUser
+            {
+                Id = SeedIds.UserAdmin,
+                Email = "admin@ptn.local",
+                UserName = "admin",
+                FullName = "System Administrator",
+                PasswordHash = "pbkdf2$100000$adQyMFF/MEDyqS1mZ08ATA==$L4rcPrvAUy/+bShxsmO+6YvNZ4t+5hOBVnjdoROjk68=",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            },
+            new AppUser
+            {
+                Id = SeedIds.UserWarehouse,
+                Email = "warehouse@ptn.local",
+                UserName = "warehouse.operator",
+                FullName = "Warehouse Operator",
+                PasswordHash = "pbkdf2$100000$fmXCFcONlxHDNILtMYT/tg==$l5v3quqi3kNjhqqcLC7jNEBW2RW0LNmHxwY2xAgI7Gs=",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            },
+            new AppUser
+            {
+                Id = SeedIds.UserTaskManager,
+                Email = "taskmanager@ptn.local",
+                UserName = "task.manager",
+                FullName = "Task Manager",
+                PasswordHash = "pbkdf2$100000$mNGvVDSa8GdorMSan+8s/A==$Ht44IbT0Q6iij1kUu47u+DZ3IKTJTTCJdhk/n7fiZro=",
+                IsActive = true,
+                CreatedAtUtc = SeedCreatedAtUtc
+            });
+
+        modelBuilder.Entity<AppUserRole>().HasData(
+            CreateUserRole(SeedIds.UserAdmin, SeedIds.RoleAdmin),
+            CreateUserRole(SeedIds.UserWarehouse, SeedIds.RoleWarehouseOperator),
+            CreateUserRole(SeedIds.UserTaskManager, SeedIds.RoleTaskManager));
+
+        modelBuilder.Entity<AppRolePermission>().HasData(
+            PermissionNames.All.Select(permissionCode => CreateRolePermission(
+                SeedIds.RoleAdmin,
+                GetPermissionId(permissionCode))).ToArray());
+
+        modelBuilder.Entity<AppRolePermission>().HasData(
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.ProductsRead)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.WarehousesRead)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.WarehousesUpdate)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.VehiclesRead)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.TasksRead)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.InventoryTransactionsRead)),
+            CreateRolePermission(SeedIds.RoleWarehouseOperator, GetPermissionId(PermissionNames.StockTransfersCreate)));
+
+        modelBuilder.Entity<AppRolePermission>().HasData(
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.ProductsRead)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.VehiclesRead)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.VehiclesUpdate)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.TasksRead)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.TasksCreate)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.TasksUpdate)),
+            CreateRolePermission(SeedIds.RoleTaskManager, GetPermissionId(PermissionNames.InventoryTransactionsRead)));
+
         modelBuilder.Entity<Product>().HasData(
             new Product
             {
@@ -362,5 +474,43 @@ public static class SeedData
                 ReferenceNote = "Ankara gorevi icin el feneri sevkiyati",
                 CreatedAtUtc = SeedCreatedAtUtc
             });
+    }
+
+    private static AppPermission CreatePermission(string code, string name, string description) =>
+        new()
+        {
+            Id = GetPermissionId(code),
+            Code = code,
+            Name = name,
+            Description = description,
+            IsActive = true,
+            CreatedAtUtc = SeedCreatedAtUtc
+        };
+
+    private static AppUserRole CreateUserRole(Guid userId, Guid roleId) =>
+        new()
+        {
+            Id = CreateDeterministicGuid($"user-role:{userId}:{roleId}"),
+            UserId = userId,
+            RoleId = roleId,
+            CreatedAtUtc = SeedCreatedAtUtc
+        };
+
+    private static AppRolePermission CreateRolePermission(Guid roleId, Guid permissionId) =>
+        new()
+        {
+            Id = CreateDeterministicGuid($"role-permission:{roleId}:{permissionId}"),
+            RoleId = roleId,
+            PermissionId = permissionId,
+            CreatedAtUtc = SeedCreatedAtUtc
+        };
+
+    private static Guid GetPermissionId(string permissionCode) =>
+        CreateDeterministicGuid($"permission:{permissionCode}");
+
+    private static Guid CreateDeterministicGuid(string value)
+    {
+        var bytes = MD5.HashData(Encoding.UTF8.GetBytes(value));
+        return new Guid(bytes);
     }
 }

@@ -8,6 +8,11 @@ namespace PTN.InventoryTracking.Persistence.Contexts;
 public sealed class InventoryTrackingDbContext(DbContextOptions<InventoryTrackingDbContext> options) : DbContext(options), IInventoryTrackingDbContext
 {
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<AppRole> AppRoles => Set<AppRole>();
+    public DbSet<AppPermission> AppPermissions => Set<AppPermission>();
+    public DbSet<AppUserRole> AppUserRoles => Set<AppUserRole>();
+    public DbSet<AppRolePermission> AppRolePermissions => Set<AppRolePermission>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<InventoryTask> Tasks => Set<InventoryTask>();

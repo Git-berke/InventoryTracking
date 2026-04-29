@@ -2,6 +2,14 @@ namespace PTN.InventoryTracking.Persistence.Seed;
 
 public static class SeedIds
 {
+    public static readonly Guid RoleAdmin = Guid.Parse("10101010-1010-1010-1010-101010101011");
+    public static readonly Guid RoleWarehouseOperator = Guid.Parse("10101010-1010-1010-1010-101010101012");
+    public static readonly Guid RoleTaskManager = Guid.Parse("10101010-1010-1010-1010-101010101013");
+
+    public static readonly Guid UserAdmin = Guid.Parse("20202020-2020-2020-2020-202020202021");
+    public static readonly Guid UserWarehouse = Guid.Parse("20202020-2020-2020-2020-202020202022");
+    public static readonly Guid UserTaskManager = Guid.Parse("20202020-2020-2020-2020-202020202023");
+
     public static readonly Guid ProductRadio = Guid.Parse("11111111-1111-1111-1111-111111111111");
     public static readonly Guid ProductGenerator = Guid.Parse("11111111-1111-1111-1111-111111111112");
     public static readonly Guid ProductFlashlight = Guid.Parse("11111111-1111-1111-1111-111111111113");

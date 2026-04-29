@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.StockTransfers;
+using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
 
@@ -9,6 +11,7 @@ namespace PTN.InventoryTracking.Api.Controllers;
 public sealed class StockTransfersController(
     IStockTransferService stockTransferService) : ApiControllerBase
 {
+    [Authorize(Policy = PermissionNames.StockTransfersCreate)]
     [HttpPost("warehouse-to-vehicle")]
     public async Task<IActionResult> TransferWarehouseToVehicle(
         [FromBody] TransferWarehouseToVehicleRequestDto request,
@@ -41,6 +44,7 @@ public sealed class StockTransfersController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.StockTransfersCreate)]
     [HttpPost("vehicle-to-warehouse")]
     public async Task<IActionResult> ReturnVehicleToWarehouse(
         [FromBody] ReturnVehicleToWarehouseRequestDto request,

@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Features.InventoryTransactions.GetInventoryTransactions;
+using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
 
@@ -7,6 +9,7 @@ namespace PTN.InventoryTracking.Api.Controllers;
 [Route("api/v1/inventory-transactions")]
 public sealed class InventoryTransactionsController(GetInventoryTransactionsHandler getInventoryTransactionsHandler) : ControllerBase
 {
+    [Authorize(Policy = PermissionNames.InventoryTransactionsRead)]
     [HttpGet]
     public async Task<IActionResult> GetTransactions(
         [FromQuery] int page = 1,

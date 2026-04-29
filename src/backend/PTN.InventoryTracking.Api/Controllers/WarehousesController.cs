@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.Warehouses;
+using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
 
@@ -9,6 +11,7 @@ namespace PTN.InventoryTracking.Api.Controllers;
 public sealed class WarehousesController(
     IWarehouseManagementService warehouseManagementService) : ApiControllerBase
 {
+    [Authorize(Policy = PermissionNames.WarehousesRead)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetWarehouse(Guid id, CancellationToken cancellationToken = default)
     {
@@ -16,6 +19,7 @@ public sealed class WarehousesController(
         return result is null ? NotFound() : Ok(result);
     }
 
+    [Authorize(Policy = PermissionNames.WarehousesCreate)]
     [HttpPost]
     public async Task<IActionResult> CreateWarehouse(
         [FromBody] CreateWarehouseRequestDto request,
@@ -36,6 +40,7 @@ public sealed class WarehousesController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.WarehousesUpdate)]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateWarehouse(
         Guid id,
@@ -57,6 +62,7 @@ public sealed class WarehousesController(
         }
     }
 
+    [Authorize(Policy = PermissionNames.WarehousesDelete)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteWarehouse(Guid id, CancellationToken cancellationToken = default)
     {
