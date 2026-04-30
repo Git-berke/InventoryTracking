@@ -696,3 +696,25 @@ Projeyi adim adim ilerletirken birkac yardimci teknik not da `docs/backend` alti
 - `realtime-notifications.md`
 
 Bu dosyalar gelistirme surecinde alinan kararlarin kisa teknik ozetlerini icerir.
+
+
+
+
+
+
+ekran görüntüleri:
+
+
+<img width="735" height="821" alt="image" src="https://github.com/user-attachments/assets/0f6d8b8e-64b5-4286-ba14-8d567c7add22" />
+
+<img width="1910" height="870" alt="image" src="https://github.com/user-attachments/assets/126822c2-15b2-4580-b9cf-da8dbf73a9d9" />
+
+<img width="1905" height="544" alt="image" src="https://github.com/user-attachments/assets/7684d8de-bcd4-4822-a436-959f34b37e1e" />
+
+
+<img width="1719" height="312" alt="image" src="https://github.com/user-attachments/assets/b4365c59-4be6-4212-989e-b5522507b4e2" />
+
+<img width="1919" height="706" alt="image" src="https://github.com/user-attachments/assets/2a91c83f-2a27-438c-97d8-031d1c53d4f3" />
+
+<img width="1919" height="878" alt="image" src="https://github.com/user-attachments/assets/1f0ccbdd-906f-4973-81aa-5af6a4320c4a" />
+
