@@ -7,6 +7,7 @@ using PTN.InventoryTracking.Application.Features.Tasks.GetTasks;
 using PTN.InventoryTracking.Application.Features.Tasks.GetTaskVehicles;
 using PTN.InventoryTracking.Application.Features.Vehicles.GetVehicleInventories;
 using PTN.InventoryTracking.Application.Features.Vehicles.GetVehicles;
+using PTN.InventoryTracking.Application.Features.Warehouses.GetWarehouses;
 
 namespace PTN.InventoryTracking.Application.Extensions;
 
@@ -22,6 +23,7 @@ public static class DependencyInjection
         services.AddTransient<GetTaskVehiclesHandler>();
         services.AddTransient<GetTaskInventoryHandler>();
         services.AddTransient<GetInventoryTransactionsHandler>();
+        services.AddTransient<GetWarehousesHandler>();
 
         return services;
     }

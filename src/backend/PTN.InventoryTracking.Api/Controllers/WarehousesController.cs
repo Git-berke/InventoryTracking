@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.Warehouses;
+using PTN.InventoryTracking.Application.Features.Warehouses.GetWarehouses;
 using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
@@ -9,8 +10,22 @@ namespace PTN.InventoryTracking.Api.Controllers;
 [ApiController]
 [Route("api/v1/warehouses")]
 public sealed class WarehousesController(
+    GetWarehousesHandler getWarehousesHandler,
     IWarehouseManagementService warehouseManagementService) : ApiControllerBase
 {
+    [Authorize(Policy = PermissionNames.WarehousesRead)]
+    [HttpGet]
+    public async Task<IActionResult> GetWarehouses(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await getWarehousesHandler.HandleAsync(
+            new GetWarehousesQuery(page, pageSize),
+            cancellationToken);
+        return OkResponse(result);
+    }
+
     [Authorize(Policy = PermissionNames.WarehousesRead)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetWarehouse(Guid id, CancellationToken cancellationToken = default)

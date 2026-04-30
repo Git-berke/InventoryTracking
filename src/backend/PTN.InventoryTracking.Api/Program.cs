@@ -32,6 +32,17 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                 errors));
     };
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy
+            .SetIsOriginAllowed(origin =>
+                new Uri(origin).Host == "localhost")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddPersistence(builder.Configuration);
@@ -78,6 +89,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseAuthentication();

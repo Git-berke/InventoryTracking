@@ -1,8 +1,90 @@
 # Inventory Tracking
 
-`Inventory Tracking`, bir kurumun envanterlerini depo, arac ve gorev bazli takip etmeyi hedefleyen moduler bir backend servisidir. Bu repo, PITON technical case dokumanindaki senaryoya gore hazirlanmis backend omurgasini icerir.
+`Inventory Tracking`, bir kurumun envanterlerini depo, arac ve gorev bazli takip etmeyi hedefleyen moduler bir sistemdir. .NET 10 backend + Next.js 16 frontend kombinasyonuyla calisir.
 
-Bu surumda odak tamamen backend tarafindadir. Redis, Elasticsearch, SignalR ve frontend taraflari bilerek kapsam disinda birakildi; buna karsin veritabani modeli, stok transfer kurallari, JWT authentication, RBAC ve temel REST API omurgasi calisir durumdadir.
+---
+
+## Hizli Baslangic (Klonlayanlar Icin)
+
+### Gereksinimler
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js 20+](https://nodejs.org)
+- [PostgreSQL 15+](https://www.postgresql.org/download/)
+
+### 1. Repoyu klonla
+```bash
+git clone <repo-url>
+cd piton-proje
+```
+
+### 2. Backend — veritabani baglantisini ayarla
+
+`src/backend/PTN.InventoryTracking.Api/appsettings.Development.json` dosyasini olustur (bu dosya `.gitignore`'da oldugu icin gelmez):
+
+```json
+{
+  "ConnectionStrings": {
+    "InventoryTracking": "Host=localhost;Port=5432;Database=ptn_inventory_tracking;Username=postgres;Password=SENIN_SIFREN"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Jwt": {
+    "Issuer": "PTN.InventoryTracking",
+    "Audience": "PTN.InventoryTracking.Client",
+    "SigningKey": "PTN.InventoryTracking.Development.Signing.Key.2026.04.29",
+    "ExpirationMinutes": 120
+  },
+  "Cache": {
+    "UseRedis": false,
+    "RedisConnectionString": "localhost:6379",
+    "StockSummaryTtlMinutes": 10
+  }
+}
+```
+
+Ya da `appsettings.json` icindeki `YOUR_POSTGRES_PASSWORD` degerini kendi sifrenle degistir.
+
+### 3. Veritabani migration'ini calistir
+```bash
+cd src/backend/PTN.InventoryTracking.Api
+dotnet ef database update
+```
+
+### 4. Backend'i baslat
+
+Visual Studio'da `http` profilini sec ve F5.  
+Ya da terminalde:
+```bash
+dotnet run --launch-profile http
+```
+Backend `http://localhost:5227` adresinde baslar.
+
+### 5. Frontend kurulumu
+```bash
+cd src/frontend
+cp .env.local.example .env.local   # Windows: copy .env.local.example .env.local
+npm install
+npm run dev
+```
+Frontend `http://localhost:3000` adresinde baslar.
+
+> **Not:** Backend `localhost:5000`'de baslarsa (Production modu) `.env.local` icindeki URL'yi `http://localhost:5000/api/v1` olarak guncelle.
+
+### 6. Tarayicide ac
+
+`http://localhost:3000` adresine git:
+
+| Rol | E-posta | Sifre |
+|-----|---------|-------|
+| Admin | `admin@ptn.local` | `Admin123!` |
+| Depo Sorumlusu | `warehouse@ptn.local` | `Warehouse123!` |
+| Arac Takip | `vehicle@ptn.local` | `Vehicle123!` |
+
+---
 
 ## Icerik
 
