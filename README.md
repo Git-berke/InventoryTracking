@@ -717,4 +717,6 @@ ekran görüntüleri:
 <img width="1919" height="706" alt="image" src="https://github.com/user-attachments/assets/2a91c83f-2a27-438c-97d8-031d1c53d4f3" />
 
 <img width="1919" height="878" alt="image" src="https://github.com/user-attachments/assets/1f0ccbdd-906f-4973-81aa-5af6a4320c4a" />
+<img width="751" height="718" alt="image" src="https://github.com/user-attachments/assets/dbae7961-2bb0-41ae-86dc-4f8576049f19" />
+
 
