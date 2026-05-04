@@ -30,4 +30,45 @@ public sealed class WarehouseQueries(InventoryTrackingDbContext dbContext) : IWa
 
         return new PagedResult<WarehouseListItemDto>(items, totalCount, page, pageSize);
     }
+
+    public async Task<WarehouseInventoryDetailDto?> GetWarehouseInventoriesAsync(
+        Guid warehouseId,
+        CancellationToken cancellationToken = default)
+    {
+        var warehouse = await dbContext.Warehouses
+            .AsNoTracking()
+            .Where(x => x.Id == warehouseId)
+            .Select(x => new
+            {
+                x.Id,
+                x.Code,
+                x.Name,
+                x.Region
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (warehouse is null)
+        {
+            return null;
+        }
+
+        var inventories = await dbContext.StockBalances
+            .AsNoTracking()
+            .Where(x => x.StockLocation.WarehouseId == warehouseId)
+            .OrderBy(x => x.Product.Name)
+            .Select(x => new WarehouseInventoryItemDto(
+                x.ProductId,
+                x.Product.Code,
+                x.Product.Name,
+                x.Product.Unit,
+                x.Quantity))
+            .ToListAsync(cancellationToken);
+
+        return new WarehouseInventoryDetailDto(
+            warehouse.Id,
+            warehouse.Code,
+            warehouse.Name,
+            warehouse.Region,
+            inventories);
+    }
 }

@@ -161,7 +161,7 @@ export default function StockTransfersPage() {
         setProducts(p.data.data.items.filter((x) => x.isActive));
         setWarehouses(w.data.data.items.filter((x) => x.isActive));
         setVehicles(v.data.data.items.filter((x) => x.isActive));
-        setTasks(t.data.data.items.filter((x) => x.status === "InProgress"));
+        setTasks(t.data.data.items.filter((x) => x.status === "in_progress"));
       })
       .finally(() => setLoadingDropdowns(false));
   }, []);

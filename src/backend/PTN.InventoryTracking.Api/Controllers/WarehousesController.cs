@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PTN.InventoryTracking.Application.Abstractions.Services;
 using PTN.InventoryTracking.Application.DTOs.Warehouses;
 using PTN.InventoryTracking.Application.Features.Warehouses.GetWarehouses;
+using PTN.InventoryTracking.Application.Features.Warehouses.GetWarehouseInventories;
 using PTN.InventoryTracking.Application.Security;
 
 namespace PTN.InventoryTracking.Api.Controllers;
@@ -11,6 +12,7 @@ namespace PTN.InventoryTracking.Api.Controllers;
 [Route("api/v1/warehouses")]
 public sealed class WarehousesController(
     GetWarehousesHandler getWarehousesHandler,
+    GetWarehouseInventoriesHandler getWarehouseInventoriesHandler,
     IWarehouseManagementService warehouseManagementService) : ApiControllerBase
 {
     [Authorize(Policy = PermissionNames.WarehousesRead)]
@@ -32,6 +34,17 @@ public sealed class WarehousesController(
     {
         var result = await warehouseManagementService.GetByIdAsync(id, cancellationToken);
         return result is null ? NotFoundResponse("Warehouse could not be found.") : OkResponse(result);
+    }
+
+    [Authorize(Policy = PermissionNames.WarehousesRead)]
+    [HttpGet("{id:guid}/inventories")]
+    public async Task<IActionResult> GetWarehouseInventories(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await getWarehouseInventoriesHandler.HandleAsync(
+            new GetWarehouseInventoriesQuery(id),
+            cancellationToken);
+
+        return result is null ? NotFoundResponse("Warehouse inventory could not be found.") : OkResponse(result);
     }
 
     [Authorize(Policy = PermissionNames.WarehousesCreate)]

@@ -9,4 +9,7 @@ public interface IWarehouseQueries
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<WarehouseInventoryDetailDto?> GetWarehouseInventoriesAsync(
+        Guid warehouseId,
+        CancellationToken cancellationToken = default);
 }
